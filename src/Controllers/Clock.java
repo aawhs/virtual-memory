@@ -1,7 +1,7 @@
 package Controllers;
 
 public enum Clock implements Runnable{
-    INSTANCE(1000);
+    INSTANCE(0);
     private int time;
     private boolean state;
 
@@ -35,7 +35,7 @@ public enum Clock implements Runnable{
                 System.out.println("Exception in Clock Thread");
                 e.printStackTrace();
             }
-            time = time + 10;
+            time = time + 100;
         }
     }
 }

@@ -4,6 +4,9 @@ import Models.Process;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Comparator;
+
+import static java.util.Arrays.sort;
 
 public class Parser {
     FileManager fileManager;
@@ -53,6 +56,8 @@ public class Parser {
                 }
             }
         }
+
+        processesData.sortProcesses();
     }
 
     public void parseMemConfig(){
@@ -60,6 +65,7 @@ public class Parser {
     }
 
     public void parseCommands(){
+
 
     }
 
@@ -91,13 +97,20 @@ public class Parser {
         public void setProcessArrayList(ArrayList<Process> processArrayList) {
             this.processArrayList = processArrayList;
         }
+
+        public void sortProcesses(){
+            processArrayList.sort(Comparator.comparingInt(Process::getReadyTime));
+        }
+    }
+    public ProcessesData getProcessesData() {
+        return processesData;
     }
 
     static class MemConfigData{
         int numOfPages;
     }
 
-    public ProcessesData getProcessesData() {
-        return processesData;
-    }
+
+
+
 }

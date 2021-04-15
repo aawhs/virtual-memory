@@ -10,14 +10,19 @@ public class Main {
         Parser parser = new Parser(new FileManager("res/inputs/processes.txt"));
         Scheduler scheduler = new Scheduler(parser);
         Thread clockThread = new Thread(Clock.INSTANCE);
-        Thread mainThread = new Thread(scheduler);
+        Thread schedulerThread = new Thread(scheduler);
 
+        clockThread.setName("Clock Thread");
+        schedulerThread.setName("Scheduler Thread");
+
+        schedulerThread.start();
         clockThread.start();
-        mainThread.start();
+
 
 
 
         try {
+            schedulerThread.join();
             clockThread.join();
         } catch (InterruptedException e) {
             e.printStackTrace();

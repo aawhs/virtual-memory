@@ -4,6 +4,8 @@ public enum Clock implements Runnable{
     INSTANCE(0);
     private int time;
     private boolean state;
+    private boolean lag;
+    private static final int MS_S  = 1000;
 
     Clock(int i){
         time = i;
@@ -25,6 +27,7 @@ public enum Clock implements Runnable{
     public void setState(boolean state) {
         this.state = state;
     }
+
 
     @Override
     public void run() {

@@ -1,29 +1,38 @@
 package Models;
 
 import Controllers.Clock;
+import Controllers.MMU;
 
+import java.util.Random;
 import java.util.concurrent.Semaphore;
+
+import static Helpers.Parser.*;
+import static Models.Process.ProcessState.*;
 
 public class Process implements Runnable{
     /*================= Data Members ================= */
     String name;
     int readyTime;
     int serviceTime;
-    State state;
-    Semaphore semaphore;
+    ProcessState state;
+    public static Semaphore cpuSempahore;
 
-    int cpuTime;
-    int timeLeft;
+    int timeInCPU = 0;
+    int remainingTime;
+    int startTime;
+
+    CommandsData commandsData = new CommandsData();
+    public static Semaphore mmuSemaphore;
 
 
     /*================= Constructor ================= */
-    public Process(String name, int readyTime, int duration) {
+    public Process(String name, int readyTime, int duration, Semaphore cpuSempahore) {
         this.name = name;
         this.readyTime = readyTime;
         this.serviceTime = duration;
-        this.state = State.NOTSTARTED;
-        this.semaphore = new Semaphore(1);
-        timeLeft = serviceTime*1000;
+        this.state = ProcessState.NOTSTARTED;
+        this.cpuSempahore = cpuSempahore;
+        remainingTime = serviceTime;
     }
 
     /*================= Setters & Getters ================= */
@@ -52,29 +61,47 @@ public class Process implements Runnable{
         this.serviceTime = serviceTime;
     }
 
-    public State getState() {
+    public ProcessState getState() {
         return state;
     }
 
-    public void setState(State state) {
+    public void setState(ProcessState state) {
         this.state = state;
     }
 
-    public int getCpuTime() {
-        return cpuTime;
+    public int getTimeInCPU() {
+        return timeInCPU;
     }
 
-    public void setCpuTime(int cpuTime) {
-        this.cpuTime = cpuTime;
+    public void setTimeInCPU(int timeInCPU) {
+        this.timeInCPU = timeInCPU;
     }
 
-    public int getTimeLeft() {
-        return timeLeft;
+    public int getRemainingTime() {
+        return remainingTime;
     }
 
-    public void setTimeLeft(int timeLeft) {
-        this.timeLeft = timeLeft;
+    public void setRemainingTime(int remainingTime) {
+        this.remainingTime = remainingTime;
     }
+
+    public void decTimeLeft(){
+        remainingTime = remainingTime - timeInCPU;
+    }
+
+    public void incTimeInCPU(){
+        timeInCPU = timeInCPU + 100;
+    }
+
+    public CommandsData getCommandsData() {
+        return commandsData;
+    }
+
+    public void setCommandsData(CommandsData commandsData) {
+        this.commandsData = commandsData;
+    }
+
+
 
     @Override
     public String toString() {
@@ -83,45 +110,156 @@ public class Process implements Runnable{
                 ", readyTime=" + readyTime +
                 ", serviceTime=" + serviceTime +
                 ", state=" + state +
-                ", cpuTime=" + cpuTime +
-                ", timeLeft=" + timeLeft +
+                ", cpuTime=" + timeInCPU +
+                ", timeLeft=" + remainingTime +
                 '}';
     }
 
     @Override
     public void run() {
-        int clock = Clock.INSTANCE.getTime();
-        System.out.println(clock + " : " + name + " Thread has started");
-        if(state == State.READY){
-            try {
-                System.out.println(clock + " : " + name + " is waiting to acquire lock");
-                semaphore.acquire();
-                System.out.println(clock + " : " + name + " Acquired lock");
+        int resumedTime = 0;
+        ProcessState previousState = null;
+        Boolean run = true;
+        while(run){
+            int cTime = Clock.INSTANCE.getTime();
 
-                state = State.RUNNING;
-
-                while(state == State.RUNNING){
-                    if(cpuTime <= (serviceTime*1000)){
-                        System.out.println(clock + " : " + name + " is executing");
-                        System.out.println(clock + " : " + name + toString());
-                        cpuTime = cpuTime + 100;
-                        timeLeft = (serviceTime*1000) - cpuTime;
-                        System.out.println(clock + " : " + name + toString());
+            switch (state){
+                case NOTSTARTED -> {
+                    state = STARTED;
+                }
+                case STARTED, READY -> {
+                    startTime = cTime;
+                    System.out.println(String.format("Clock : %d , %s , Started", cTime, name));
+                    try {
+                        cpuSempahore.acquire();
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
                     }
-                    if((cpuTime/1000) == serviceTime){
-                        System.out.println(clock + " : " + name + " finished executing");
-                        state = State.FINISHED;
+                    state = RUNNING;
+                    previousState = READY;
+                }
+                case RUNNING -> {
+                    try {
+                        Thread.sleep(100);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                    timeInCPU += 100;
+                    if(previousState == BLOCKED){
+                        System.out.println(String.format("Clock : %d , %s , Resumed", cTime, name));
+                        previousState = RUNNING;
+                    }
+
+                    if(previousState == RUNNING){
+                        //System.out.println(String.format("Clock : %d , %s , executing command test", cTime, name));
+                        previousState = null;
+                    }
+                    executeCommands();
+
+                    remainingTime -= timeInCPU;
+
+                    if(timeInCPU == serviceTime){
+                        state = FINISHED;
                     }
                 }
-            } catch (InterruptedException e) {
-                e.printStackTrace();
+                case BLOCKED -> {
+                    previousState = BLOCKED;
+                    System.out.println(String.format("Clock : %d , %s , Paused", cTime, name));
+                    if(remainingTime == 0){
+                        if(cTime == startTime+serviceTime){
+                            state = FINISHED;
+                        }
+                    }else{
+                        state = BLOCKED;
+                    }
+                }
+                case FINISHED -> {
+                    try {
+                        Thread.sleep(100);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                    System.out.println(String.format("Clock : %d , %s , Finished", cTime, name));
+                    run = false;
+                    cpuSempahore.release();
+                }
+                default -> throw new IllegalStateException("Unexpected value: " + state);
             }
+        }
+    }
 
-            System.out.println(name + " released lock");
-            semaphore.release();
+
+
+/*
+    @Override
+    public void run() {
+        while(!(state == FINISHED)){
+            int clock = Clock.INSTANCE.getTime();
+            if(state == STARTED){
+                System.out.println(String.format("Clock : %d , %s , Started", clock, name));
+            }
+            System.out.println(String.format("Clock : %d , %s , Resumed", clock, name));
+
+
+
+
+        }
+    }*/
+
+    public void executeCommands(){
+        Random rand = new Random();
+        int low = 1;
+        int high = 1000;
+        int bound = (high-low) + 1;
+
+        try {
+            mmuSemaphore.acquire();
+
+        } catch (InterruptedException e) {
+            e.printStackTrace();
         }
 
+        while(state == RUNNING){
+            //decTimeLeft();
+            if(!commandsData.getCommands().isEmpty()){
+                String command = String.join(" ", commandsData.getCommands().poll());
+                MMU.command = command;
+                MMU.readNext = true;
+                int commandRunTime = Math.min(remainingTime, rand.nextInt(bound) + low);
+                timeInCPU += commandRunTime;
+                /*while(commandRunTime <= remainingTime){
+
+
+                }
+                */
+                if(commandRunTime <= remainingTime){
+                    try {
+                        Thread.sleep(commandRunTime);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                    int cTime = Clock.INSTANCE.getTime();
+
+                    String result = MMU.result;
+                    System.out.println(String.format("Clock : %d , %s , %s", cTime, name, result));
+                    remainingTime -= commandRunTime;
+                    if(remainingTime == 0){
+                        state = BLOCKED;
+                    }
+                }
+            }else{
+                state = BLOCKED;
+            }
+        }
+        mmuSemaphore.release();
+    }
+
+    public enum ProcessState {
+        NOTSTARTED,
+        STARTED,
+        READY,
+        RUNNING,
+        BLOCKED,
+        FINISHED
     }
 }
-
-

@@ -1,9 +1,6 @@
 package Helpers;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileWriter;
-import java.io.IOException;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.Scanner;
 
@@ -18,12 +15,14 @@ import java.util.Scanner;
 public class FileManager {
     /*================= Data Members ================= */
     File file;
+    private static final File outputFile = new File("res/outputs/output.txt");
     Scanner scanner;
     ArrayList<String> lines;
 
     /*================= Constructor ================= */
     public FileManager(String fileName){
         file = new File(fileName);
+
         try {
             scanner = new Scanner(file);
             scan();
@@ -51,5 +50,20 @@ public class FileManager {
 
     public void setFile(File file) {
         this.file = file;
+    }
+
+    public static void setOutputFile(){
+        try {
+            if(outputFile.createNewFile()){
+                System.out.println("Output file created : " + outputFile.getPath());
+            }else{
+                System.out.println("Output file already exists : " + outputFile.getPath());
+            }
+            PrintStream output;
+            output = new PrintStream(outputFile);
+            System.setOut(output);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 }

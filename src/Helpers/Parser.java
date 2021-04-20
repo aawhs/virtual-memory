@@ -123,7 +123,7 @@ public class Parser {
             switch (i) {
                 case 0 ->{
                     processesData.cores = Integer.parseInt(fileLines.get(file).get(i));
-                    cpuSempahore = new Semaphore(processesData.cores, true);
+                    cpuSempahore = new Semaphore(processesData.cores);
                 }
                 case 1 -> processesData.numOfProcesses = Integer.parseInt(fileLines.get(file).get(i));
                 default -> {

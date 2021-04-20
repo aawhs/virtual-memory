@@ -38,8 +38,10 @@ public class VirtualMemory {
         vmPagesSize = memoryPages.size();
         try {
             fileWriter = new FileWriter(diskPages);
-            for(MemoryPage memoryPage : memoryPages)
-                fileWriter.write(memoryPage.getMemoryObject().toString());
+            for(MemoryPage memoryPage : memoryPages){
+                //System.out.println(memoryPage.getMemoryObject().toString());
+                fileWriter.write(memoryPage.getMemoryObject().toString() + "\n");
+            }
             fileWriter.close();
         } catch (IOException e) {
             e.printStackTrace();
@@ -47,9 +49,10 @@ public class VirtualMemory {
     }
     public synchronized void writeToVirtualMemory(){
         try {
-            fileWriter = new FileWriter(diskPages.getParentFile());
-            for(MemoryPage memoryPage : memoryPages)
-                fileWriter.write(memoryPage.toString());
+            fileWriter = new FileWriter(diskPages);
+            for(MemoryPage memoryPage : memoryPages){
+                fileWriter.write(memoryPage.getMemoryObject().toString() + "\n");
+            }
             fileWriter.close();
         } catch (IOException e) {
             e.printStackTrace();
@@ -73,12 +76,17 @@ public class VirtualMemory {
         try {
             int index = 0;
             int cTime = Clock.INSTANCE.getTime();
+            for(int i = 0; i <memoryPages.size(); i++){
+                if(memoryPages.get(i).getMemoryObject().getId().equals(id)){
+                    return memoryPages.get(i);
+                }
+            }
             fileReader = new Scanner(diskPages);
             while(fileReader.hasNext()){
                 index++;
                 String line = fileReader.next();
                if(line.contains(id)){
-                   String [] parsedLine = line.split(" ");
+                   String [] parsedLine = line.split(",");
                    if(parsedLine[0].equals(id)){
                        MemoryObject memoryObject = new MemoryObject(
                                parsedLine[0],
@@ -101,9 +109,27 @@ public class VirtualMemory {
         MemoryPage locatedPage = lookup(id);
         if(locatedPage != null){
             MemoryObject memoryObject = locatedPage.getMemoryObject();
-            delete(id);
-            writeToVirtualMemory(memoryPage);
-            return memoryObject;
+            for(int i = 0; i <memoryPages.size(); i++){
+                if(memoryPages.get(i).getMemoryObject().getId().equals(id)){
+                    memoryPages.remove(i);
+                    writeToVirtualMemory();
+                    memoryPages.add(memoryPage);
+                    vmPagesSize = memoryPages.size();
+                    writeToVirtualMemory();
+                    return memoryObject;
+                }
+            }
+            boolean isDeleted = delete(id);
+            if(isDeleted){
+                memoryPages.add(memoryPage);
+                vmPagesSize = memoryPages.size();
+                writeToVirtualMemory();
+
+                return memoryObject;
+            }else{
+                return null;
+            }
+
         }else{
 
         }

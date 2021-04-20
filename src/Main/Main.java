@@ -22,7 +22,7 @@ public class Main {
         };
 
         ArrayList<FileManager> fileManagers = new ArrayList<>();
-        FileManager.setOutputFile();
+        //FileManager.setOutputFile();
         for(String fileName : fileNames)
             fileManagers.add(new FileManager(fileName));
 
@@ -46,6 +46,7 @@ public class Main {
         try {
             schedulerThread.join();
             clockThread.join();
+            mmuThread.join();
         } catch (InterruptedException e) {
             e.printStackTrace();
         }

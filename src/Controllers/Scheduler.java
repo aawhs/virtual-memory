@@ -15,6 +15,7 @@ public class Scheduler implements Runnable {
     Map<Integer, Boolean> coresState;
     Semaphore coresSemaphore;
     Semaphore mmuSemaphore;
+    Semaphore commandSemaphore;
 
     ArrayList<Process> processes;
     ArrayList<Thread> processesThreads = new ArrayList<>();
@@ -28,8 +29,12 @@ public class Scheduler implements Runnable {
         this.parser = parser;
 
         ProcessesData processesData = parser.getProcessesData();
-        mmuSemaphore = new Semaphore(1,true);
+        mmuSemaphore = new Semaphore(1);
         Process.mmuSemaphore = mmuSemaphore;
+        commandSemaphore = new Semaphore(1);
+        Process.commandSemaphore = commandSemaphore;
+
+
 
         processes = processesData.getProcessArrayList();
         cores = processesData.getCores();
@@ -55,6 +60,7 @@ public class Scheduler implements Runnable {
                     if(!readyQueue.isEmpty()){
                         Thread process = new Thread(readyQueue.poll());
                         processesThreads.add(process);
+                        process.setName(readyProcess.getName());
                         process.start();
                     }
                 }else{
@@ -116,6 +122,7 @@ public class Scheduler implements Runnable {
                 e.printStackTrace();
             }
         }
+        MMU.closeMMU = true;
         Clock.INSTANCE.setState(false);
     }
 }

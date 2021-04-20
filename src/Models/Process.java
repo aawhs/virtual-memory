@@ -3,6 +3,7 @@ package Models;
 import Controllers.Clock;
 import Controllers.MMU;
 
+import java.util.ArrayList;
 import java.util.Random;
 import java.util.concurrent.Semaphore;
 
@@ -22,6 +23,7 @@ public class Process implements Runnable{
     int startTime;
 
     CommandsData commandsData = new CommandsData();
+    public static Semaphore commandSemaphore;
     public static Semaphore mmuSemaphore;
 
 
@@ -154,7 +156,15 @@ public class Process implements Runnable{
                         //System.out.println(String.format("Clock : %d , %s , executing command test", cTime, name));
                         previousState = null;
                     }
+
+                    try {
+                        mmuSemaphore.acquire();
+
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
                     executeCommands();
+                    mmuSemaphore.release();
 
                     remainingTime -= timeInCPU;
 
@@ -164,12 +174,12 @@ public class Process implements Runnable{
                 }
                 case BLOCKED -> {
                     previousState = BLOCKED;
-                    System.out.println(String.format("Clock : %d , %s , Paused", cTime, name));
-                    if(remainingTime == 0){
-                        if(cTime == startTime+serviceTime){
+                    if(remainingTime <= 0){
+                        if(cTime >= startTime+serviceTime){
                             state = FINISHED;
                         }
                     }else{
+                        System.out.println(String.format("Clock : %d , %s , Paused", cTime, name));
                         state = BLOCKED;
                     }
                 }
@@ -206,52 +216,45 @@ public class Process implements Runnable{
         }
     }*/
 
-    public void executeCommands(){
+    public synchronized void executeCommands(){
         Random rand = new Random();
         int low = 1;
         int high = 1000;
         int bound = (high-low) + 1;
 
-        try {
-            mmuSemaphore.acquire();
-
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-
         while(state == RUNNING){
             //decTimeLeft();
             if(!commandsData.getCommands().isEmpty()){
-                String command = String.join(" ", commandsData.getCommands().poll());
-                MMU.command = command;
-                MMU.readNext = true;
-                int commandRunTime = Math.min(remainingTime, rand.nextInt(bound) + low);
-                timeInCPU += commandRunTime;
-                /*while(commandRunTime <= remainingTime){
-
-
-                }
-                */
+                int commandRunTime = Math.min(remainingTime, rand.nextInt(high));
                 if(commandRunTime <= remainingTime){
+                    try {
+                        commandSemaphore.acquire();
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                    String command = String.join(" ", commandsData.getCommands().poll());
+                    MMU.command = command;
+                    MMU.readNext = true;
+                    timeInCPU += commandRunTime;
                     try {
                         Thread.sleep(commandRunTime);
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                     }
-                    int cTime = Clock.INSTANCE.getTime();
+                    int cTime = Clock.INSTANCE.getTime() + commandRunTime;
 
                     String result = MMU.result;
                     System.out.println(String.format("Clock : %d , %s , %s", cTime, name, result));
                     remainingTime -= commandRunTime;
+                    commandSemaphore.release();
                     if(remainingTime == 0){
                         state = BLOCKED;
                     }
                 }
             }else{
-                state = BLOCKED;
+                state = FINISHED;
             }
         }
-        mmuSemaphore.release();
     }
 
     public enum ProcessState {

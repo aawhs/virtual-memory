@@ -16,13 +16,15 @@ public class MMU implements Runnable{
     private static int mainMemorySize = 0;
     private static int mainMemoryOccupied = 0;
     private static MemoryPage[] mainMemory;
-    private static VirtualMemory virtualMemory;
+    public static VirtualMemory virtualMemory;
     private Parser parser;
     private MemConfigData memConfigData;
     public static volatile boolean readNext = false;
     public static volatile boolean closeMMU = false;
     public static String command;
     public static String result;
+    public static boolean vmAccess = false;
+    private static CommandsData commandsData;
 
 
 
@@ -35,6 +37,7 @@ public class MMU implements Runnable{
             mainMemory[i] = null;
         }
         virtualMemory = new VirtualMemory();
+        commandsData = parser.getCommandsData();
     }
 
     public synchronized static String executeCommand(String command){
@@ -89,7 +92,8 @@ public class MMU implements Runnable{
         }else{
             MemoryObject memoryObject = new MemoryObject(variableId, value, cTime, false);
             MemoryPage memoryPage = new MemoryPage(VirtualMemory.vmPagesSize + 1, memoryObject);
-            virtualMemory.writeToVirtualMemory(memoryPage);
+            virtualMemory.getMemoryPages().add(memoryPage);
+            virtualMemory.writeToVirtualMemory();
             String returnString = String.format("Store: Variable %s, Value %d", variableId, value);
             return returnString;
         }
@@ -104,8 +108,21 @@ public class MMU implements Runnable{
                 return returnString;
             }
         }
-        virtualMemory.delete(variableId);
-        String returnString = String.format("Release: Variable %s", variableId);
+
+        if(virtualMemory.delete(variableId)){
+            String returnString = String.format("Release: Variable %s", variableId);
+            return returnString;
+        }
+        ArrayList<MemoryPage> memoryPages = virtualMemory.getMemoryPages();
+        for(int i = 0; i <memoryPages.size(); i++){
+            if(memoryPages.get(i).getMemoryObject().getId().equals(variableId)){
+                memoryPages.remove(i);
+                virtualMemory.writeToVirtualMemory();
+                String returnString = String.format("Release: Variable %s", variableId);
+                return returnString;
+            }
+        }
+        String returnString = String.format("Release Failed: Variable %s", variableId);
         return returnString;
     }
 
@@ -122,8 +139,14 @@ public class MMU implements Runnable{
         try{
             switch (compare){
                 case 0 -> throw new Throwable("Memory Object Access time is equal");
-                case 1 -> swap(mainMemory[1] , 1);
-                case -1 -> swap(mainMemory[0] ,0);
+                case 1 -> {
+                    swap(mainMemory[1], 1, variableId);
+                    return mainMemory[1].getMemoryObject().getValue();
+                }
+                case -1 -> {
+                    swap(mainMemory[0], 0, variableId);
+                    return mainMemory[0].getMemoryObject().getValue();
+                }
             }
         } catch (Throwable throwable) {
             throwable.printStackTrace();
@@ -131,23 +154,21 @@ public class MMU implements Runnable{
         return -1;
     }
 
-    public synchronized static void swap(MemoryPage memoryPage, int index){
+    public synchronized static void swap(MemoryPage memoryPage, int index, String newVariableId){
         int cTime = Clock.INSTANCE.getTime();
         String oldVariableId = memoryPage.getMemoryObject().getId();
-        MemoryObject memoryObject = virtualMemory.swap(memoryPage.getMemoryObject().getId(), memoryPage);
+        MemoryObject memoryObject = virtualMemory.swap(newVariableId, memoryPage);
         mainMemory[index].setMemoryObject(memoryObject);
-        String newVariableId = memoryObject.getId();
         String returnString = String.format(
                 "Clock : %d Memory Manager, SWAP: Variable %s with Variable %s",
-                cTime, oldVariableId,newVariableId);
+                cTime, newVariableId,oldVariableId);
         System.out.println(returnString);
 
     }
 
-
     @Override
     public void run() {
-        while(!closeMMU){
+        while(!commandsData.getCommands().isEmpty()){
             while (!readNext) Thread.onSpinWait();
             executeCommand(command);
             readNext = false;

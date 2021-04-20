@@ -1,5 +1,14 @@
 package Controllers;
 
+/**
+ * @Title COEN346 - Programming Assignment 3
+ *
+ * @author Ahmed Ali - 40102454
+ * @author Petru-Andrei Vrabie - 40113236
+ *
+ * Controller - Clock
+ * Resource for Clock Code : TA Slides
+ */
 public enum Clock implements Runnable{
     INSTANCE(0);
     private int time;

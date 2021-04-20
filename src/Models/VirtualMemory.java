@@ -6,7 +6,14 @@ import Helpers.FileManager;
 import java.io.*;
 import java.util.ArrayList;
 import java.util.Scanner;
-
+/**
+ * @Title COEN346 - Programming Assignment 3
+ *
+ * @author Ahmed Ali - 40102454
+ * @author Petru-Andrei Vrabie - 40113236
+ *
+ * Model - Virtual Memory
+ */
 public class VirtualMemory {
     FileManager fileManager;
     File diskPages;

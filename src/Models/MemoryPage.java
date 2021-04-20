@@ -1,5 +1,13 @@
 package Models;
 
+/**
+ * @Title COEN346 - Programming Assignment 3
+ *
+ * @author Ahmed Ali - 40102454
+ * @author Petru-Andrei Vrabie - 40113236
+ *
+ * Model - MemoryPage
+ */
 public class MemoryPage {
     private int id;
     private MemoryObject memoryObject;

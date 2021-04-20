@@ -8,8 +8,16 @@ import java.util.concurrent.Semaphore;
 
 import static Helpers.Parser.ProcessesData.*;
 import static java.util.Arrays.sort;
-
+/**
+ * @Title COEN346 - Programming Assignment 3
+ *
+ * @author Ahmed Ali - 40102454
+ * @author Petru-Andrei Vrabie - 40113236
+ *
+ * Helper - Parser
+ */
 public class Parser {
+    /*================= Data Members ================= */
     FileManager fileManager;
     File file;
     ArrayList<String> lines;
@@ -22,7 +30,7 @@ public class Parser {
     MemConfigData memConfigData;
     CommandsData commandsData;
 
-
+    /*================= Constructors ================= */
     public Parser(FileManager fileManager) {
         this.fileManager = fileManager;
         this.file = fileManager.getFile();
@@ -45,6 +53,7 @@ public class Parser {
         parseFiles();
     }
 
+    /*================= Parsing Methods ================= */
     public void parseFiles(){
         for(File file : files)
             parse(file);
@@ -72,6 +81,8 @@ public class Parser {
         }
     }
 
+
+    /*================= SubClass Data Members ================= */
     /**
      * Process Parsing Object & Methods
      */

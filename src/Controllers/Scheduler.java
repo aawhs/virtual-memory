@@ -1,6 +1,13 @@
 package Controllers;
 
-
+/**
+ * @Title COEN346 - Programming Assignment 3
+ *
+ * @author Ahmed Ali - 40102454
+ * @author Petru-Andrei Vrabie - 40113236
+ *
+ * Controller - Scheduler
+ */
 import Helpers.Parser;
 import Helpers.Parser.ProcessesData;
 import Models.Process;
@@ -9,6 +16,7 @@ import java.util.*;
 import java.util.concurrent.Semaphore;
 
 public class Scheduler implements Runnable {
+    /*================= Data Members ================= */
     Parser parser;
 
     int cores;
@@ -24,7 +32,7 @@ public class Scheduler implements Runnable {
     Queue<Process> readyQueue;
 
 
-
+    /*================= Constructor ================= */
     public Scheduler(Parser parser){
         this.parser = parser;
 
@@ -50,6 +58,7 @@ public class Scheduler implements Runnable {
 
     }
 
+    /*================= Scheduling Methods ================= */
     private void schedule(){
         while(!isFinished()){
             if(!arrivalQueue.isEmpty()){
@@ -73,17 +82,6 @@ public class Scheduler implements Runnable {
         }
     }
 
-    private void createProcessThreads(){
-        processesThreads = new ArrayList<>();
-        for(Process process : processes)
-            processesThreads.add(new Thread(process));
-    }
-
-    private void startThreads(){
-        //processesThreads.get(0).start();
-        for(Thread thread : processesThreads)
-            thread.start();
-    }
 
     private void setArrivalQueue(){
         for(Process process : processes)
@@ -108,9 +106,6 @@ public class Scheduler implements Runnable {
         return false;
     }
 
-    public synchronized static int getTime(){
-        return Clock.INSTANCE.getTime();
-    }
 
     @Override
     public void run() {
@@ -126,47 +121,3 @@ public class Scheduler implements Runnable {
         Clock.INSTANCE.setState(false);
     }
 }
-
-
-
-
-
-/*
-    void cycle(){
-        int i = 0;
-        List <Thread> processesThreadsList = new LinkedList<>();
-        for(Process process: processes) {
-            processesThreadsList.add(new Thread(process));
-        }
-
-        long clock = Clock.INSTANCE.getTime();
-        int readyTime = processes.get(i).getReadyTime()*1000;
-        //System.out.println(clock);
-        if(readyTime == clock){
-            processes.get(i).setState(State.STARTED);
-            System.out.println(clock + " : " + processes.get(i));
-            processes.get(i).setState(State.READY);
-            System.out.println(clock + " : " + processes.get(i));
-            processesThreadsList.get(i).start();
-            if(i < processes.size()){
-                i++;
-            }
-            if(i == processes.size())
-                i = 0;
-
-        }
-
-        try {
-            Thread.sleep(100);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-
-        processesThreadsList.stream().forEach((process) -> {
-            try {
-                process.join();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        });
-    }*/

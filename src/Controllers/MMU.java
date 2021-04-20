@@ -12,7 +12,17 @@ import java.util.Locale;
 
 import static Helpers.Parser.*;
 
+/**
+ * @Title COEN346 - Programming Assignment 3
+ *
+ * @author Ahmed Ali - 40102454
+ * @author Petru-Andrei Vrabie - 40113236
+ *
+ * Controller - MMU
+ */
+
 public class MMU implements Runnable{
+    /*================= Data Members ================= */
     private static int mainMemorySize = 0;
     private static int mainMemoryOccupied = 0;
     private static MemoryPage[] mainMemory;
@@ -27,7 +37,7 @@ public class MMU implements Runnable{
     private static CommandsData commandsData;
 
 
-
+    /*================= Constructor ================= */
     public MMU(Parser parser){
         this.parser = parser;
         memConfigData = parser.getMemConfigData();
@@ -40,6 +50,7 @@ public class MMU implements Runnable{
         commandsData = parser.getCommandsData();
     }
 
+    /*================= API ================= */
     public synchronized static String executeCommand(String command){
         String commandType = command.split(" ")[0];
         String commandStatus;
@@ -76,6 +87,7 @@ public class MMU implements Runnable{
        return "Command not executed - unidentified command";
     }
 
+    /*================= MMU Methods ================= */
     public synchronized static String store(String variableId, int value){
         int cTime = Clock.INSTANCE.getTime();
         if(mainMemoryOccupied != mainMemorySize){
@@ -166,6 +178,7 @@ public class MMU implements Runnable{
 
     }
 
+    /*================= Thread Runnable ================= */
     @Override
     public void run() {
         while(!commandsData.getCommands().isEmpty()){

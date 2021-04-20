@@ -13,8 +13,17 @@ import java.util.ArrayList;
 
 import static Helpers.Parser.*;
 
+/**
+ * @Title COEN346 - Programming Assignment 3
+ *
+ * @author Ahmed Ali - 40102454
+ * @author Petru-Andrei Vrabie - 40113236
+ *
+ * Main - Driver
+ */
 public class Main {
     public static void main(String[] args){
+        /*================= Files Handling================= */
         String[] fileNames = new String[] {
                 "res/inputs/processes.txt",
                 "res/inputs/memconfig.txt",
@@ -22,15 +31,17 @@ public class Main {
         };
 
         ArrayList<FileManager> fileManagers = new ArrayList<>();
-        //FileManager.setOutputFile();
+        FileManager.setOutputFile();
         for(String fileName : fileNames)
             fileManagers.add(new FileManager(fileName));
 
 
+        /*================= Controllers Instantiation ================= */
         Parser parser = new Parser(fileManagers);
         MMU mmu = new MMU(parser);
         Scheduler scheduler = new Scheduler(parser);
 
+        /*================= Multithreading================= */
         Thread clockThread = new Thread(Clock.INSTANCE);
         Thread mmuThread = new Thread(mmu);
         Thread schedulerThread = new Thread(scheduler);
@@ -44,9 +55,9 @@ public class Main {
         clockThread.start();
 
         try {
+            mmuThread.join();
             schedulerThread.join();
             clockThread.join();
-            mmuThread.join();
         } catch (InterruptedException e) {
             e.printStackTrace();
         }

@@ -2,6 +2,14 @@ package Models;
 
 import java.util.Comparator;
 
+/**
+ * @Title COEN346 - Programming Assignment 3
+ *
+ * @author Ahmed Ali - 40102454
+ * @author Petru-Andrei Vrabie - 40113236
+ *
+ * Model - MemoryObject
+ */
 public class MemoryObject implements Comparable<MemoryObject> {
     private String id;
     private int value;

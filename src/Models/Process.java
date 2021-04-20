@@ -10,6 +10,14 @@ import java.util.concurrent.Semaphore;
 import static Helpers.Parser.*;
 import static Models.Process.ProcessState.*;
 
+/**
+ * @Title COEN346 - Programming Assignment 3
+ *
+ * @author Ahmed Ali - 40102454
+ * @author Petru-Andrei Vrabie - 40113236
+ *
+ * Model - Process
+ */
 public class Process implements Runnable{
     /*================= Data Members ================= */
     String name;
@@ -119,7 +127,6 @@ public class Process implements Runnable{
 
     @Override
     public void run() {
-        int resumedTime = 0;
         ProcessState previousState = null;
         Boolean run = true;
         while(run){
@@ -153,7 +160,6 @@ public class Process implements Runnable{
                     }
 
                     if(previousState == RUNNING){
-                        //System.out.println(String.format("Clock : %d , %s , executing command test", cTime, name));
                         previousState = null;
                     }
 
@@ -198,24 +204,6 @@ public class Process implements Runnable{
         }
     }
 
-
-
-/*
-    @Override
-    public void run() {
-        while(!(state == FINISHED)){
-            int clock = Clock.INSTANCE.getTime();
-            if(state == STARTED){
-                System.out.println(String.format("Clock : %d , %s , Started", clock, name));
-            }
-            System.out.println(String.format("Clock : %d , %s , Resumed", clock, name));
-
-
-
-
-        }
-    }*/
-
     public synchronized void executeCommands(){
         Random rand = new Random();
         int low = 1;
@@ -223,7 +211,6 @@ public class Process implements Runnable{
         int bound = (high-low) + 1;
 
         while(state == RUNNING){
-            //decTimeLeft();
             if(!commandsData.getCommands().isEmpty()){
                 int commandRunTime = Math.min(remainingTime, rand.nextInt(high));
                 if(commandRunTime <= remainingTime){
